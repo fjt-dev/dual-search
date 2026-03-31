@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f7f9;
+    --surface: #ffffff;
+    --border: #e2e2ea;
+    --text: #1a1a2e;
+    --muted: #9090a8;
+    --google: #4285f4;
+    --openai: #10a37f;
+    --accent: #1a1a2e;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Subtle background dots */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, #c8c8d8 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.45;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Ambient blobs */
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(100px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.12;
+  }
+  .blob-blue  { width: 480px; height: 480px; background: var(--google); top: -160px; left: -80px; }
+  .blob-green { width: 380px; height: 380px; background: var(--openai); bottom: -100px; right: -60px; }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 580px;
+    padding: 2rem;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 2.2rem;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 0.45rem;
+  }
+
+  .logo span.g { color: var(--google); }
+
+  .subtitle {
+    font-size: 0.83rem;
+    color: var(--muted);
+    font-weight: 300;
+    letter-spacing: 0.02em;
+  }
+
+  /* Badges */
+  .badges {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    opacity: 0;
+    animation: fadeUp 0.5s ease 0.1s forwards;
+  }
+
+  .badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.28rem 0.7rem;
+    border-radius: 100px;
+    font-size: 0.73rem;
+    font-weight: 500;
+    border: 1px solid;
+  }
+
+  .badge-google { color: var(--google); border-color: rgba(66,133,244,0.25); background: rgba(66,133,244,0.06); }
+  .badge-openai { color: var(--openai); border-color: rgba(16,163,127,0.25); background: rgba(16,163,127,0.06); }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* Search card */
+  .search-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.4rem;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+    opacity: 0;
+    animation: fadeUp 0.5s ease 0.2s forwards;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 0.65rem;
+    align-items: stretch;
+  }
+
+  .input-wrap {
+    flex: 1;
+    position: relative;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 0.85rem 1rem 0.85rem 2.75rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input[type="text"]:focus {
+    border-color: rgba(66,133,244,0.5);
+    box-shadow: 0 0 0 3px rgba(66,133,244,0.1);
+    background: #fff;
+  }
+
+  input[type="text"]::placeholder { color: var(--muted); }
+
+  /* Button */
+  .btn-search {
+    padding: 0 1.4rem;
+    background: var(--text);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    white-space: nowrap;
+    letter-spacing: 0.03em;
+  }
+
+  .btn-search:hover {
+    background: #2e2e50;
+    box-shadow: 0 4px 16px rgba(26,26,46,0.2);
+    transform: translateY(-1px);
+  }
+
+  .btn-search:active { transform: translateY(0); }
+
+  /* Notice */
+  .notice {
+    margin-top: 1.25rem;
+    padding: 0.8rem 1rem;
+    background: #fffbea;
+    border: 1px solid #f0d060;
+    border-radius: 10px;
+    font-size: 0.76rem;
+    color: #9a7010;
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    opacity: 0;
+    animation: fadeUp 0.5s ease 0.3s forwards;
+  }
+
+  .notice-icon { flex-shrink: 0; margin-top: 0.05rem; }
+
+  /* Flash */
+  .flash {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--text);
+    border-radius: 100px;
+    padding: 0.55rem 1.2rem;
+    font-size: 0.82rem;
+    color: #fff;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 100;
+    white-space: nowrap;
+  }
+
+  .flash.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob-blue"></div>
+<div class="blob blob-green"></div>
+
+<div class="container">
+  <div class="header">
+    <div class="logo"><span class="g">S</span>earch</div>
+    <div class="subtitle">Google で検索、ChatGPT に質問を同時に</div>
+    <div class="badges">
+      <span class="badge badge-google"><span class="badge-dot"></span>Google 検索</span>
+      <span class="badge badge-openai"><span class="badge-dot"></span>ChatGPT に質問</span>
+    </div>
+  </div>
+
+  <div class="search-card">
+    <div class="input-row">
+      <div class="input-wrap">
+        <span class="search-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
+        <input type="text" id="query" placeholder="検索ワードを入力..." autocomplete="off" />
+      </div>
+      <button class="btn-search" id="searchBtn">検索</button>
+    </div>
+  </div>
+
+  <div class="notice">
+    <span class="notice-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </span>
+    <span>ブラウザのポップアップブロックにより2つ目のタブがブロックされる場合があります。アドレスバー右側の通知からポップアップを許可してください。</span>
+  </div>
+</div>
+
+<div class="flash" id="flash"></div>
+
+<script>
+  const queryInput = document.getElementById('query');
+  const searchBtn  = document.getElementById('searchBtn');
+  const flash      = document.getElementById('flash');
+
+  function doSearch() {
+    const q = queryInput.value.trim();
+    if (!q) {
+      showFlash('⚠ 検索ワードを入力してください');
+      queryInput.focus();
+      return;
+    }
+
+    const encoded = encodeURIComponent(q);
+    const encodedAsk = encodeURIComponent(q + 'について教えて');
+    const w1 = window.open(`https://www.google.co.jp/search?q=${encoded}`, '_blank');
+    const w2 = window.open(`https://chat.openai.com/?q=${encodedAsk}`, '_blank');
+
+    if (!w1 || !w2) {
+      showFlash('⚠ ポップアップがブロックされました。許可してください。');
+    } else {
+      showFlash('✓ 2つのタブを開きました');
+    }
+  }
+
+  searchBtn.addEventListener('click', doSearch);
+  queryInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+  // URLパラメータ ?q= から自動検索
+  const params = new URLSearchParams(window.location.search);
+  const initQ = params.get('q');
+  if (initQ) {
+    queryInput.value = initQ;
+    doSearch();
+  }
+
+  function showFlash(msg) {
+    flash.textContent = msg;
+    flash.classList.add('show');
+    setTimeout(() => flash.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
