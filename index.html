@@ -387,7 +387,7 @@
 
       searchBtn.addEventListener('click', doSearch);
       queryInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') doSearch();
+        if (e.key === 'Enter' && !e.isComposing) doSearch();
       });
 
       // URLパラメータ ?q= から自動検索
